@@ -1,5 +1,3 @@
-from collections import Counter
-
 def pattern_count(text, needle):
     count = 0
     k = len(needle)
@@ -8,11 +6,13 @@ def pattern_count(text, needle):
             count += 1
     return count
 
+
 def all_patterns_counts(text, k):
     counts = []
     for i in range(len(text) - k + 1):
         counts.append(pattern_count(text, text[i:i+k]))
     return counts
+
 
 def frequent_words(text, k):
     counts = all_patterns_counts(text, k)
@@ -23,6 +23,7 @@ def frequent_words(text, k):
         if c == max_:
             result.add(text[i:i+k])
     return result
+
 
 def complement(text):
     translation = {
@@ -36,6 +37,7 @@ def complement(text):
         result += translation[i]
     return result
 
+
 def substr_pos(text, needle):
     result = []
     k = len(needle)
@@ -43,6 +45,7 @@ def substr_pos(text, needle):
         if text[i:i+k] == needle:
             result.append(i)
     return result
+
 
 def find_clumps(text, k, L=500, t=3):
     pos = {}
@@ -77,6 +80,7 @@ def find_clumps(text, k, L=500, t=3):
         pos[kmer].append(i)
         # print('pos :', pos[kmer])
     return result
+
 
 if __name__ == '__main__':
     # with open('E_coli.txt') as f:
