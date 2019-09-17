@@ -1,5 +1,8 @@
 import itertools
 from collections import Counter
+
+from matplotlib import pyplot as plt
+
 from week1 import complement
 
 
@@ -76,26 +79,20 @@ def most_frequents(text, k, d, count_complement=True):
 
     added = Counter()
     for kmer, count in counts.items():
-        for neighbor in neighbors(kmer, d):
-            added[neighbor] += count
+        for d_ in range(d):
+            for neighbor in neighbors(kmer, d+1):
+                added[neighbor] += count
     counts += added
 
     max_ = max(counts.values())
     return [kmer for kmer, count in counts.items() if count == max_]
 
 
-if __name__ == '__main__':
-    with open('/home/louis/Documents/Bio_courses/dataset_9_8.txt') as f:
-        gene = f.readline().rstrip('\n')
-        params = f.readline().rstrip('\n').split()
-        k = int(params[0])
-        d = int(params[1])
-    print(most_frequents(gene, k, d))
+def visu_skew(text):
+    s = skew(text)
+    plt.plot(s)
+    plt.show()
 
-    print(most_frequents('ACGTTGCATGTCGCATGATGCATGAGAGCT', 4, 1))
-    print(most_frequents('AAAAAAAAAA', 2, 1))
-    print(most_frequents('AGTCAGTC', 4, 2))
-    print(most_frequents('AATTAATTGGTAGGTAGGTA', 4, 0))
-    print(most_frequents('ATA', 3, 1))
-    print(most_frequents('AAT', 3, 0))
-    print(most_frequents('TAGCG', 2, 1))
+
+if __name__ == '__main__':
+    print(len(list(neighbors('TGCAT', 1))))
