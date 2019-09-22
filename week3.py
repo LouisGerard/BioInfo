@@ -1,25 +1,11 @@
+import sys
 import itertools
 from collections import Counter
 from math import log
+from functools import reduce
+import operator
 
 from week2 import neighbors, hamming
-
-
-def probability(kmer, profile):
-    return sum([profile[i][nuc] for i, nuc in enumerate(kmer)])
-
-
-def most_probable_kmer(text, profile):
-    k = len(profile)
-    best_kmer = ''
-    best_p = 0
-    for i in range(len(text) - k + 1):
-        kmer = text[i:i+k]
-        p = probability(kmer, profile)
-        if p > best_p:
-            best_p = p
-            best_kmer = kmer
-    return best_kmer
 
 
 def motif_in_text(text, motif, d):
@@ -55,8 +41,8 @@ def profile(matrix):
     for row in matrix:
         for i, nuc in enumerate(row):
             counts[i][nuc] += 1
-    sums = [sum(counts[i].values()) for i in range(cols)]
-    return [{k: v / sums[i] for k, v in counts[i].items()} for i in range(cols)]
+    sums = [sum([counts[i][j] for j in 'ACTG']) for i in range(cols)]
+    return [{k: counts[i][k] / sums[i] for k in 'ACTG'} for i in range(cols)]
 
 
 def entropy(matrix):
@@ -98,16 +84,71 @@ def brute_force_median_string(texts, k):
     return best_kmer
 
 
-if __name__ == '__main__':
-    fname = 'test.txt'
-    with open(fname) as f:
-        gene = f.readline().rstrip('\n')
-        k = int(f.readline().rstrip('\n'))
-        profile = [{} for i in range(k)]
-        for nuc in ['A', 'C', 'G', 'T']:
-            line = f.readline().rstrip('\n')
-            for i, p in enumerate(line.split()):
-                p = float(p)
-                profile[i][nuc] = p
+def probability(kmer, profile):
+    return reduce(operator.mul, [profile[i][nuc] for i, nuc in enumerate(kmer)])
 
-    print(most_probable_kmer(gene, profile))
+
+
+def sum_probability(kmer, profile):
+    return sum([profile[i][nuc] for i, nuc in enumerate(kmer)])
+
+
+
+def most_probable_kmer(text, profile, sum_prob=False):
+    k = len(profile)
+    best_kmer = text[:k]
+    best_p = probability(best_kmer, profile)
+    for i in range(1, len(text) - k + 1):
+        kmer = text[i:i+k]
+        p = sum_probability(kmer, profile) if sum_prob else probability(kmer, profile)
+        if p > best_p:
+            best_p = p
+            best_kmer = kmer
+    return best_kmer
+
+
+def consensus(profile):
+    result = ''
+    for i in profile:
+        result += max(i, key=i.get)
+    return result
+
+
+def score(profile):  # sum profile is equivalent to sum hamming
+    result = 0
+    c = consensus(profile)
+    for i, c_ in zip(profile, c):
+        result += sum([v for k, v in i.items() if k != c_])
+    return result
+
+
+def greedy_motif_search(texts, k, t, start_from_1=False):
+    missing_fn = Counter.__missing__
+    if start_from_1:
+        Counter.__missing__ = lambda self, x: 1
+
+    best_motifs = [text[:k] for text in texts]
+    best_score = float('inf')
+    for i in range(len(texts[0]) - k + 1):
+        motifs = [texts[0][i:i+k]]
+        for j in range(1, t):
+            p = profile(motifs)
+            motifs.append(most_probable_kmer(texts[j], p))
+        p = profile(motifs)
+        s = score(p)
+
+        if s < best_score:
+            best_score = s
+            best_motifs = motifs
+
+    Counter.__missing__ = missing_fn
+    return best_motifs
+
+if __name__ == '__main__':
+    fname = sys.argv[1]
+    with open(fname) as f:
+        params = f.readline().rstrip('\n').split()
+        k = int(params[0])
+        t = int(params[1])
+        texts = [line.rstrip('\n') for line in f if len(line) > 1]
+    print('\n'.join(greedy_motif_search(texts, k, t, True)))
