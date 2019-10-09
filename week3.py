@@ -1,4 +1,3 @@
-import sys
 import itertools
 from collections import Counter
 from math import log
@@ -88,19 +87,13 @@ def probability(kmer, profile):
     return reduce(operator.mul, [profile[i][nuc] for i, nuc in enumerate(kmer)])
 
 
-
-def sum_probability(kmer, profile):
-    return sum([profile[i][nuc] for i, nuc in enumerate(kmer)])
-
-
-
-def most_probable_kmer(text, profile, sum_prob=False):
+def most_probable_kmer(text, profile):
     k = len(profile)
     best_kmer = text[:k]
     best_p = probability(best_kmer, profile)
     for i in range(1, len(text) - k + 1):
         kmer = text[i:i+k]
-        p = sum_probability(kmer, profile) if sum_prob else probability(kmer, profile)
+        p = probability(kmer, profile)
         if p > best_p:
             best_p = p
             best_kmer = kmer
@@ -122,10 +115,12 @@ def score(profile):  # sum profile is equivalent to sum hamming
     return result
 
 
-def greedy_motif_search(texts, k, t, start_from_1=False):
+def greedy_motif_search(texts, k, start_from_1=False):
     missing_fn = Counter.__missing__
     if start_from_1:
         Counter.__missing__ = lambda self, x: 1
+
+    t = len(texts)
 
     best_motifs = [text[:k] for text in texts]
     best_score = float('inf')
@@ -144,11 +139,11 @@ def greedy_motif_search(texts, k, t, start_from_1=False):
     Counter.__missing__ = missing_fn
     return best_motifs
 
+
 if __name__ == '__main__':
-    fname = sys.argv[1]
-    with open(fname) as f:
-        params = f.readline().rstrip('\n').split()
-        k = int(params[0])
-        t = int(params[1])
-        texts = [line.rstrip('\n') for line in f if len(line) > 1]
-    print('\n'.join(greedy_motif_search(texts, k, t, True)))
+    texts = [
+        'CTCGATGAGTAGGAAAGTAGTTTCACTGGGCGAACCACCCCGGCGCTAATCCTAGTGCCC',
+        'GCAATCCTACCCGAGGCCACATATCAGTAGGAACTAGAACCACCACGGGTGGCTAGTTTC',
+        'GGTGTTGAACCACGGGGTTAGTTTCATCTATTGTAGGAATCGGCTTCAAATCCTACACAG',
+    ]
+    print('\n'.join(brute_force_median_string(texts, 7)))
