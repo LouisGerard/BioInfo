@@ -80,7 +80,7 @@ def brute_force_median_string(texts, k):
         if dist < min_dist:
             min_dist = dist
             best_kmer = kmer
-    return best_kmer
+    return best_kmer, min_dist
 
 
 def probability(kmer, profile):
